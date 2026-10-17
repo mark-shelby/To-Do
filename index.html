@@ -108,7 +108,7 @@
             };
         })();
 
-
+// changes in dom here : 
         const DOMModule = (function() {
             const projectListDiv = document.getElementById('project-list');
             const todoListDiv = document.getElementById('todo-list');
@@ -117,7 +117,7 @@
             const newTodoForm = document.getElementById('new-todo-form');
 
             const renderProjects = () => {
-                projectListDiv.innerHTML = ''; // View all projects[cite: 7]
+                projectListDiv.innerHTML = ''; 
                 const projects = LogicModule.getProjects();
                 
                 projects.forEach((project, index) => {
