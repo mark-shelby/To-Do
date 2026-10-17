@@ -91,6 +91,7 @@
                 const newTodo = createTodo(title, description, dueDate, priority);
                 projects[currentProjectIndex].todos.push(newTodo);
                 saveToStorage(); // Save every time a new todo is created
+            };
 
             const deleteTodo = (todoIndex) => {
                 projects[currentProjectIndex].todos.splice(todoIndex, 1);
@@ -124,7 +125,8 @@
                     const btn = document.createElement('button');
                     btn.textContent = project.name;
                     
-                    btn.addEventListener('click', () => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         LogicModule.setCurrentProject(index);
                         renderTodos();
                     });
@@ -158,13 +160,15 @@
                     detailsDiv.style.display = 'none';
                     detailsDiv.textContent = `Description: ${todo.description}`;
                     
-                    expandBtn.addEventListener('click', () => {
+                    expandBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
                     });
 
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = 'Delete';
-                    deleteBtn.addEventListener('click', () => {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         LogicModule.deleteTodo(index);
                         renderTodos();
                     });
