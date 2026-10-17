@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List App</title>
+</head>
+<body>
+    <h1>Todo List</h1>
+
+    <div>
+        <h2>Projects</h2>
+        <div id="project-list"></div>
+        <br>
+        <form id="new-project-form">
+            <label for="project-name">New Project:</label>
+            <input type="text" id="project-name" required>
+            <button type="submit">Create Project</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <div>
+        <h2 id="current-project-title">Select a Project</h2>
+        <div id="todo-list"></div>
+        <br>
+        
+        <form id="new-todo-form" style="display: none;">
+            <h3>Add New Todo</h3>
+            <label>Title: <input type="text" id="todo-title" required></label><br><br>
+            <label>Description: <textarea id="todo-desc"></textarea></label><br><br>
+            <label>Due Date: <input type="date" id="todo-date" required></label><br><br>
+            <label>Priority: 
+                <select id="todo-priority">
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                </select>
+            </label><br><br>
+            <button type="submit">Add Todo</button>
+        </form>
+    </div>
+
+    <script>
+        const LogicModule = (function() {
+            
+            const createTodo = (title, description, dueDate, priority) => {
+                return { title, description, dueDate, priority };
+            };
+
+           
+            const createProject = (name) => {
+                return { name, todos: [] };
+            };
+
+            let projects = [];
+            let currentProjectIndex = 0;
+
+          
+            const saveToStorage = () => {
+                
+                localStorage.setItem('todo_projects', JSON.stringify(projects));
+            };
+
+            const loadFromStorage = () => {
+                const storedData = localStorage.getItem('todo_projects');
+                
+                if (storedData) {
+                    projects = JSON.parse(storedData);
+                } else {
+                    projects.push(createProject('Default Project'));
+                    saveToStorage();
+                }
+            };
+
+            const getProjects = () => projects;
+            
+            const getCurrentProjectIndex = () => currentProjectIndex;
+            
+            const setCurrentProject = (index) => {
+                currentProjectIndex = index;
+            };
+
+            const addProject = (name) => {
+                projects.push(createProject(name));
+                saveToStorage(); // Save every time a new project is created
+            };
+
+            const addTodo = (title, description, dueDate, priority) => {
+                const newTodo = createTodo(title, description, dueDate, priority);
+                projects[currentProjectIndex].todos.push(newTodo);
+                saveToStorage(); // Save every time a new todo is created
+
+            const deleteTodo = (todoIndex) => {
+                projects[currentProjectIndex].todos.splice(todoIndex, 1);
+                saveToStorage();
+            };
+
+            return {
+                loadFromStorage,
+                getProjects,
+                getCurrentProjectIndex,
+                setCurrentProject,
+                addProject,
+                addTodo,
+                deleteTodo
+            };
+        })();
+
+
+        const DOMModule = (function() {
+            const projectListDiv = document.getElementById('project-list');
+            const todoListDiv = document.getElementById('todo-list');
+            const currentProjectTitle = document.getElementById('current-project-title');
+            const newProjectForm = document.getElementById('new-project-form');
+            const newTodoForm = document.getElementById('new-todo-form');
+
+            const renderProjects = () => {
+                projectListDiv.innerHTML = ''; // View all projects[cite: 7]
+                const projects = LogicModule.getProjects();
+                
+                projects.forEach((project, index) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = project.name;
+                    
+                    btn.addEventListener('click', () => {
+                        LogicModule.setCurrentProject(index);
+                        renderTodos();
+                    });
+                    projectListDiv.appendChild(btn);
+                    projectListDiv.appendChild(document.createElement('br'));
+                });
+            };
+
+            const renderTodos = () => {
+                todoListDiv.innerHTML = '';
+                const projects = LogicModule.getProjects();
+                const currentIndex = LogicModule.getCurrentProjectIndex();
+                
+                if (projects.length === 0) return;
+
+                const currentProject = projects[currentIndex];
+                currentProjectTitle.textContent = `Project: ${currentProject.name}`;
+                newTodoForm.style.display = 'block';
+
+                // View all todos in each project
+                currentProject.todos.forEach((todo, index) => {
+                    const todoDiv = document.createElement('div');
+                    
+                    todoDiv.innerHTML = `
+                        <strong>${todo.title}</strong> - Due: ${todo.dueDate} (Priority: ${todo.priority}) 
+                    `;
+                    
+                    const expandBtn = document.createElement('button');
+                    expandBtn.textContent = 'Expand Details';
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.style.display = 'none';
+                    detailsDiv.textContent = `Description: ${todo.description}`;
+                    
+                    expandBtn.addEventListener('click', () => {
+                        detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
+                    });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.addEventListener('click', () => {
+                        LogicModule.deleteTodo(index);
+                        renderTodos();
+                    });
+
+                    todoDiv.appendChild(expandBtn);
+                    todoDiv.appendChild(deleteBtn);
+                    todoDiv.appendChild(detailsDiv);
+                    
+                    todoListDiv.appendChild(todoDiv);
+                    todoListDiv.appendChild(document.createElement('hr'));
+                });
+            };
+
+            // Event Listeners
+            newProjectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const nameInput = document.getElementById('project-name');
+                LogicModule.addProject(nameInput.value);
+                nameInput.value = '';
+                renderProjects();
+            });
+
+            newTodoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const title = document.getElementById('todo-title').value;
+                const desc = document.getElementById('todo-desc').value;
+                const date = document.getElementById('todo-date').value;
+                const priority = document.getElementById('todo-priority').value;
+
+                LogicModule.addTodo(title, desc, date, priority);
+                newTodoForm.reset();
+                renderTodos();
+            });
+
+            const init = () => {
+                LogicModule.loadFromStorage();
+                renderProjects();
+                renderTodos();
+            };
+
+            return { init };
+        })();
+
+        // Initialize the App
+        DOMModule.init();
+    </script>
+</body>
+</html>
